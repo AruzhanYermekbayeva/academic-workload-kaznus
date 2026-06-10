@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нагрузка ППС — КазНУС</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:22px">📚</span>
+    <h1>Нагрузка ППС</h1>
+    <span class="sub">КазНУС · 2025–2026</span>
+  </div>
+  <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2)"
+    onclick="Teachers.open()">👥 Преподаватели</button>
+</header>
+
+<!-- ══ MAIN ══ -->
+<div class="container">
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step-1">
+      <span class="n">1</span>Загрузка ОП
+    </div>
+    <div class="step" id="step-2">
+      <span class="n">2</span>Назначение преподавателей
+    </div>
+    <div class="step" id="step-3">
+      <span class="n">3</span>Итоговая нагрузка
+    </div>
+  </div>
+
+  <!-- ══ PANEL 1: Upload ══ -->
+  <div id="panel-upload">
+
+    <div class="card">
+      <div class="card-title">Шаг 1 — Загрузите файл учебного плана</div>
+      <div class="alert alert-info" style="margin-bottom:16px">
+        Принимается <b>Рабочий учебный план (РУП)</b> в формате <b>.xlsx</b> или <b>.xls</b>.
+        Дисциплины автоматически распределятся по трём департаментам.
+      </div>
+      <div class="upload-zone" id="upload-zone">
+        <div class="icon">📄</div>
+        <p><strong>Нажмите, чтобы выбрать файл</strong> или перетащите сюда</p>
+        <p style="margin-top:6px;font-size:12px">Поддерживаются .xlsx и .xls</p>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+    </div>
+
+    <!-- Saved data notification -->
+    <div class="card" id="saved-card" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-weight:700;font-size:15px">Есть сохранённые данные</div>
+          <div style="font-size:12.5px;color:#6b7280;margin-top:3px" id="saved-info"></div>
+        </div>
+        <button class="btn btn-primary" onclick="App.goTo('assign')">Продолжить →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ PANEL 2: Assign ══ -->
+  <div id="panel-assign" style="display:none">
+
+    <div class="navbar">
+      <div>
+        <h2>Шаг 2 — Назначьте преподавателей</h2>
+        <p>Выберите преподавателя для каждой дисциплины. Список общий для всех департаментов.</p>
+      </div>
+      <div class="navbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="App.goTo('upload')">← Назад</button>
+        <button class="btn btn-primary" onclick="App.goTo('summary')">Далее: Итоги →</button>
+      </div>
+    </div>
+
+    <div id="assign-content"></div>
+  </div>
+
+  <!-- ══ PANEL 3: Summary ══ -->
+  <div id="panel-summary" style="display:none">
+
+    <div class="navbar">
+      <div>
+        <h2>Шаг 3 — Итоговая нагрузка</h2>
+        <p>Выберите преподавателя, проверьте данные и скачайте индивидуальный файл.</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="App.goTo('assign')">← Назад</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="v" id="sum-teachers">—</div><div class="l">Преподавателей с нагрузкой</div></div>
+      <div class="stat"><div class="v" id="sum-assigned" style="color:var(--success)">—</div><div class="l">Дисциплин назначено</div></div>
+      <div class="stat"><div class="v" id="sum-unassigned" style="color:var(--warn)">—</div><div class="l">Не назначено</div></div>
+      <div class="stat"><div class="v" id="sum-hours">—</div><div class="l">Часов всего</div></div>
+    </div>
+
+    <!-- Export card -->
+    <div class="card">
+      <div class="card-title">Скачать индивидуальную нагрузку</div>
+      <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div class="fg" style="margin:0;flex:1;min-width:280px">
+          <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:600;color:#4b5563">
+            Выберите преподавателя:
+          </label>
+          <select class="export-select" id="export-sel"
+            onchange="Summary.onSelect(this.value)">
+            <option value="">— выберите —</option>
+          </select>
+        </div>
+        <button class="btn btn-success" id="btn-export" disabled onclick="Summary.exportTeacher()">
+          ⬇ Скачать xlsx
+        </button>
+        <button class="btn btn-secondary" onclick="window.location.href=API.exportAllUrl()">
+          ⬇ Скачать всех
+        </button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview-content"></div>
+
+    <!-- All summary -->
+    <div class="card">
+      <div class="card-title">Все преподаватели с нагрузкой</div>
+      <div id="all-summary"><p style="color:#9ca3af">Загрузка…</p></div>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+
+<!-- ══ MODAL: Teachers list ══ -->
+<div class="overlay" id="modal-teachers">
+  <div class="modal modal-wide">
+    <h2>👥 Управление преподавателями</h2>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="Teachers.openAdd()">➕ Добавить</button>
+    </div>
+    <div id="teachers-list"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-teachers')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add / Edit teacher ══ -->
+<div class="overlay" id="modal-teacher-form">
+  <div class="modal">
+    <h2 id="teacher-form-title">Добавить преподавателя</h2>
+    <div class="fg">
+      <label>ФИО *</label>
+      <input type="text" id="tf-name" placeholder="Иванов Иван Иванович">
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Должность</label>
+        <input type="text" id="tf-pos" list="dl-pos" placeholder="Сеньор-лектор">
+        <datalist id="dl-pos">
+          <option value="Профессор">
+          <option value="Ассоциированный профессор">
+          <option value="Сеньор-лектор">
+          <option value="Преподаватель">
+          <option value="Директор департамента, ассоциированный профессор">
+        </datalist>
+      </div>
+      <div class="fg">
+        <label>Уч. степень</label>
+        <input type="text" id="tf-degree" placeholder="PhD, к.э.н. …">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Департамент *</label>
+        <select id="tf-dept">
+          <option value="ДМИС">Менеджмент и инновации в спорте</option>
+          <option value="ДСГД">Социально-гуманитарных дисциплин</option>
+          <option value="ДСОК">Спортивного образования и коучинга</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Тип</label>
+        <select id="tf-stype">
+          <option value="Штатные">Штатный</option>
+          <option value="Совместители">Совместитель</option>
+          <option value="Внешние">Внешний совместитель</option>
+          <option value="Вакансия">Вакансия</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-teacher-form')">Отмена</button>
+      <button class="btn btn-primary" onclick="Teachers.save()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Scripts -->
+<script src="/static/js/api.js"></script>
+<script src="/static/js/upload.js"></script>
+<script src="/static/js/assign.js"></script>
+<script src="/static/js/teachers.js"></script>
+<script src="/static/js/summary.js"></script>
+<script>
+// ══ App shell ══
+const PANELS = { upload: 'panel-upload', assign: 'panel-assign', summary: 'panel-summary' };
+const STEPS  = { upload: 1, assign: 2, summary: 3 };
+
+const App = {
+  goTo(name) {
+    Object.entries(PANELS).forEach(([k, id]) => {
+      document.getElementById(id).style.display = k === name ? '' : 'none';
+    });
+    // Update steps
+    const cur = STEPS[name];
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById(`step-${i}`);
+      el.className = 'step' + (i === cur ? ' active' : i < cur ? ' done' : '');
+    }
+    if (name === 'assign')  Assign.render();
+    if (name === 'summary') Summary.render();
+  },
+
+  async clearData() {
+    if (!confirm('Удалить все загруженные дисциплины и назначения?')) return;
+    await API.clearDisciplines();
+    toast('Данные очищены');
+    location.reload();
+  }
+};
+
+// ══ Modal helpers ══
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ══ Toast ══
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show toast-' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+// ══ Init ══
+Upload.init();
+</script>
+</body>
+</html>
